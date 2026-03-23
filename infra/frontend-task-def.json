@@ -1,0 +1,41 @@
+{
+  "family": "gemini-chat-frontend-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::674288275577:role/gemini-chat-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::674288275577:role/gemini-chat-ecs-task-role",
+  "containerDefinitions": [
+    {
+      "name": "frontend",
+      "image": "674288275577.dkr.ecr.ap-south-2.amazonaws.com/gemini-chat-frontend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {"name": "NEXT_PUBLIC_API_URL", "value": "http://gemini-chat-alb-1134942176.ap-south-2.elb.amazonaws.com"}
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/gemini-chat/frontend",
+          "awslogs-region": "ap-south-2",
+          "awslogs-stream-prefix": "ecs",
+          "awslogs-create-group": "true"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 15
+      }
+    }
+  ]
+}

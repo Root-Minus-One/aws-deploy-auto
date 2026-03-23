@@ -1,0 +1,49 @@
+{
+  "family": "gemini-chat-backend-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::674288275577:role/gemini-chat-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::674288275577:role/gemini-chat-ecs-task-role",
+  "containerDefinitions": [
+    {
+      "name": "backend",
+      "image": "674288275577.dkr.ecr.ap-south-2.amazonaws.com/gemini-chat-backend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {"name": "GEMINI_API_KEY", "value": "AIzaSyCjOMCMBOOS7e6s0n2zAvWQZDgbxqFYBJ8"},
+        {"name": "GEMINI_MODEL", "value": "gemini-2.0-flash"},
+        {"name": "MONGODB_URI", "value": "mongodb+srv://ruthvik:Puq1Y9IBo6oxbmhU@cluster0.ujix0be.mongodb.net/?appName=Cluster0"},
+        {"name": "MONGODB_DB_NAME", "value": "gemini_chat"},
+        {"name": "REDIS_URL", "value": "redis://gemini-chat-redis.cnqstf.0001.aps2.cache.amazonaws.com:6379"},
+        {"name": "ALLOWED_ORIGINS", "value": "*"},
+        {"name": "LOG_LEVEL", "value": "INFO"},
+        {"name": "APP_NAME", "value": "gemini-chat-api"},
+        {"name": "DEBUG", "value": "false"}
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/gemini-chat/backend",
+          "awslogs-region": "ap-south-2",
+          "awslogs-stream-prefix": "ecs",
+          "awslogs-create-group": "true"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')\" || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 10
+      }
+    }
+  ]
+}

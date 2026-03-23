@@ -1,0 +1,46 @@
+{
+  "family": "gemini-chat-grafana-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::674288275577:role/gemini-chat-ecs-execution-role",
+  "taskRoleArn": "arn:aws:iam::674288275577:role/gemini-chat-ecs-task-role",
+  "containerDefinitions": [
+    {
+      "name": "grafana",
+      "image": "674288275577.dkr.ecr.ap-south-2.amazonaws.com/gemini-chat-grafana:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {"name": "GF_SECURITY_ADMIN_USER", "value": "admin"},
+        {"name": "GF_SECURITY_ADMIN_PASSWORD", "value": "admin"},
+        {"name": "GF_USERS_ALLOW_SIGN_UP", "value": "false"},
+        {"name": "GF_SERVER_ROOT_URL", "value": "http://gemini-chat-alb-1134942176.ap-south-2.elb.amazonaws.com/grafana/"},
+        {"name": "GF_SERVER_SERVE_FROM_SUB_PATH", "value": "true"},
+        {"name": "AWS_DEFAULT_REGION", "value": "ap-south-2"}
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/gemini-chat/grafana",
+          "awslogs-region": "ap-south-2",
+          "awslogs-stream-prefix": "ecs",
+          "awslogs-create-group": "true"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 15
+      }
+    }
+  ]
+}
