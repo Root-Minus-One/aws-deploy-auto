@@ -141,6 +141,10 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: 🔑 Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
       - name: 📋 Get current backend task definition
         run: |
           aws ecs describe-task-definition \
@@ -154,7 +158,7 @@ jobs:
         with:
           task-definition: backend-task-def.json
           container-name: backend
-          image: ${{ needs.build-backend.outputs.image }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_BACKEND_REPO }}:${{ github.sha }}
 
       - name: 🚀 Deploy backend to ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
@@ -177,7 +181,7 @@ jobs:
         with:
           task-definition: frontend-task-def.json
           container-name: frontend
-          image: ${{ needs.build-frontend.outputs.image }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_FRONTEND_REPO }}:${{ github.sha }}
 
       - name: 🚀 Deploy frontend to ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
@@ -200,7 +204,7 @@ jobs:
         with:
           task-definition: grafana-task-def.json
           container-name: grafana
-          image: ${{ needs.build-grafana.outputs.image }}
+          image: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_GRAFANA_REPO }}:${{ github.sha }}
 
       - name: 🚀 Deploy grafana to ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
@@ -211,12 +215,15 @@ jobs:
           wait-for-service-stability: true
 
       - name: ✅ Deployment summary
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
         run: |
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "  ✅ Deployment Complete!"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "  Backend:  ${{ needs.build-backend.outputs.image }}"
-          echo "  Frontend: ${{ needs.build-frontend.outputs.image }}"
-          echo "  Grafana:  ${{ needs.build-grafana.outputs.image }}"
+          echo "  Backend:  $ECR_REGISTRY/$ECR_BACKEND_REPO:$IMAGE_TAG"
+          echo "  Frontend: $ECR_REGISTRY/$ECR_FRONTEND_REPO:$IMAGE_TAG"
+          echo "  Grafana:  $ECR_REGISTRY/$ECR_GRAFANA_REPO:$IMAGE_TAG"
           echo "  Cluster:  $ECS_CLUSTER"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
